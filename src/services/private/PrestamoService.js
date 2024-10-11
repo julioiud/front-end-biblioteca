@@ -4,15 +4,23 @@ const headers = {
     'Content-Type': 'application/json'
 };
 
-export const guardarPrestamo = async (data) => {
-  /*  const token = sessionStorage.getItem('token')
+export const guardarPrestamo = async (prestamo) => {
+   const token = sessionStorage.getItem('token')
     headers.token = token
-    return await axiosConfig.post('/codigos',
+    const data =  {
+        ejemplar: {
+         _id: prestamo.ejemplar
+        },
+        usuario : {
+         _id: prestamo.usuario
+        } 
+     }
+    return await axiosConfig.post('/prestamos',
                 data,
                 {
                     headers: headers
                 }
-            )*/
+            )
 }
 
 

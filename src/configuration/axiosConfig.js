@@ -18,7 +18,7 @@ axiosConfig.interceptors.response.use(
     ) {
       localStorage.clear();
       sessionStorage.clear();
-      window.location.pathname = "/login";
+      window.location.pathname = "/login"
     }
     return Promise.reject(error);
 });

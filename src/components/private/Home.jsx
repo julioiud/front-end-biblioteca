@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import './Home.css'
-import { consultarPrestamos } from '../../services/private/PrestamoService'
+import { consultarPrestamos, guardarPrestamo } from '../../services/private/PrestamoService'
+import ModalAdd from './prestamos/ModalAdd'
+import { consultarUsuarios } from '../../services/private/UsuarioService'
+import { consultarEjemplares } from '../../services/private/EjemplarService'
+import Swal from 'sweetalert2'
 
 const src = "/logo.png"
 
@@ -18,6 +22,12 @@ export default function Home() {
     nombre: ''
   })
   const [prestamos, setPrestamos] = useState([])
+  const [usuarios, setUsuarios] = useState([])
+  const [ejemplares, setEjemplares] = useState([])
+  const [prestamo, setPrestamo] = useState({
+    usuario: '',
+    ejemplar: ''
+  })
 
   useEffect(() => {
 
@@ -30,8 +40,37 @@ export default function Home() {
     img.onload = () => {
       setLoading(false);
     }
-    listarPrestamos()
+    setTimeout(() => {
+      listarPrestamos()
+    }, 500)
+  
   }, []);
+
+  useEffect(() => {
+    listarEjemplares()
+  }, [])
+
+  useEffect(() => {
+    listarUsuarios()
+  }, [])
+
+  const listarUsuarios = async () => {
+    try {
+      const { data } = await consultarUsuarios()
+      setUsuarios(data)
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
+  const listarEjemplares = async () => {
+    try {
+      const { data } = await consultarEjemplares()
+      setEjemplares(data)
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
   const listarPrestamos = async () => {
     try {
@@ -42,34 +81,97 @@ export default function Home() {
     }
   }
 
+  const hacerPrestamo = async () => {
+    try {
+      const { data } = await guardarPrestamo(prestamo)
+      console.log(data)
+      Swal.fire({
+        title: 'Prestamo',
+        text: 'Prestamos realizado',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      })
+    } catch (e) {
+      let msj = 'Error al prestar'
+      if(e.response) {
+        msj = e.response.data.msj
+      }
+      
+      Swal.fire({
+        title: 'Prestamo',
+        text: msj,
+        icon: 'error',
+        confirmButtonText: 'OK'
+      })
+      console.log(e)
+    }
+  }
+
+  const handle = (e) => {
+    e.preventDefault()
+    setPrestamo({
+      ...prestamo,
+      [e.target.name] : e.target.value
+    })
+  }
+
   return (
     <div className='container'>
-      <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="exampleModalLabel">Nuevo Prestamo</h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form>
-          <div class="mb-3">
-            <label for="recipient-name" class="col-form-label">Usuario:</label>
-            <input type="text" class="form-control" id="recipient-name" />
+     <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div className="modal-dialog">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h1 className="modal-title fs-5" id="exampleModalLabel">Nuevo Prestamo</h1>
+            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="mb-3">
-            <label for="message-text" class="col-form-label">Ejemplar:</label>
-            <textarea class="form-control" id="message-text"></textarea>
+          <div className="modal-body">
+            <form>
+              <div className="mb-3">
+                <label htmlFor="recipient-name" className="col-form-label">Usuario:</label>
+                <select 
+                  onChange={handle}
+                  className="form-select" 
+                  id="inputGroupSelect01"
+                  name="usuario"
+                >
+                  <option value="">Selecciona uno...</option>
+
+                  {
+                    usuarios
+                    .filter(usuario => usuario.enabled)
+                    .map((usuario,index) => 
+                      <option key={index} value={usuario._id}>{usuario.nombre}</option>
+                    )
+                  }
+                </select>
+              </div>
+              <div className="mb-3">
+                <label htmlFor="message-text" className="col-form-label">Ejemplar:</label>
+                <select 
+                  onChange={handle}
+                  className="form-select" 
+                  id="inputGroupSelect01"
+                  name="ejemplar"
+                >
+                  <option value="">Selecciona uno...</option>
+                  {
+                    ejemplares
+                    .filter(ejemplar => !ejemplar.prestado)
+                    .map((ejemplar,index) => 
+                      <option key={index} value={ejemplar._id}>{`${ejemplar.codigo} - ${ejemplar.libro.titulo}`}</option>
+                    )
+                  }
+                </select>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Send message</button>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button onClick={hacerPrestamo} type="button" className="btn btn-primary" disabled={prestamo.ejemplar.length == 0 || prestamo.usuario.length == 0}>Hacer prestamo</button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
       <h3 className='text-center mt-3'>
         Prestamos I.U. Digital
       </h3>
